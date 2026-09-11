@@ -1215,12 +1215,14 @@ function getIcon(name, color) {
 const CONQUESTS = [
   { id:'first',    name:'primeira imersão',        desc:'1ª sessão completa',                         req:s=>s.total>=1,              icon:'ti-wave-sine' },
   { id:'streak3',  name:'corrente abissal',         desc:'3 sessões consecutivas',                     req:s=>s.streak>=3,             icon:'ti-link' },
+  { id:'streak5',  name:'cinco profundezas',        desc:'5 sessões consecutivas',                     req:s=>s.streak>=5,             icon:'ti-link' },
+  { id:'streak10', name:'maré ininterrupta',        desc:'10 sessões consecutivas',                    req:s=>s.streak>=10,            icon:'ti-storm' },
+  { id:'streak20', name:'fluxo perpétuo',           desc:'20 sessões consecutivas',                    req:s=>s.streak>=20,            icon:'ti-rocket' },
   { id:'world1c',  name:'o abismo respondeu',       desc:'completou o mundo abissal',                  req:s=>s['reward_abyss'],       icon:'ti-wave-sine' },
   { id:'world2',   name:'as chamas do submundo',    desc:'desbloqueou salamandra-de-fogo',             req:s=>s.total>=30,             icon:'ti-flame' },
   { id:'world2c',  name:'a forja interior',         desc:'completou o submundo',                       req:s=>s['reward_under'],       icon:'ti-flame' },
   { id:'world3',   name:'raízes da terra',          desc:'desbloqueou onça-pintada',                   req:s=>s.total>=80,             icon:'ti-leaf' },
   { id:'world3c',  name:'a terra conhece seu nome', desc:'completou o mundo terra',                    req:s=>s['reward_terra'],       icon:'ti-leaf' },
-  { id:'streak10', name:'maré ininterrupta',        desc:'10 sessões consecutivas',                    req:s=>s.streak>=10,            icon:'ti-storm' },
   { id:'world4',   name:'asas sobre o brasil',      desc:'desbloqueou arara-azul',                     req:s=>s.total>=145,            icon:'ti-feather' },
   { id:'world4c',  name:'o voo que não pousa',      desc:'completou o mundo do ar',                    req:s=>s['reward_ar'],          icon:'ti-feather' },
   { id:'world5',   name:'o véu etéreo',             desc:'desbloqueou espírito-da-mata',               req:s=>s.total>=210,            icon:'ti-sparkles' },
@@ -1228,19 +1230,16 @@ const CONQUESTS = [
   { id:'world6',   name:'além do nome',             desc:'desbloqueou estrela-viva',                   req:s=>s.total>=290,            icon:'ti-universe' },
   { id:'world6c',  name:'o cosmos se reconhece',    desc:'completou o cosmos',                         req:s=>s['reward_cosmos'],      icon:'ti-universe' },
   { id:'complete', name:'o ciclo completo',         desc:'desbloqueou todas as 18 criaturas',          req:s=>s.total>=360,            icon:'ti-infinity' },
+  { id:'shop1',    name:'o primeiro poder',         desc:'comprou um poder na loja',                   req:s=>s.owned.length>=1,       icon:'ti-wand' },
   { id:'cipher1',  name:'a primeira linha',         desc:'recebeu o 1º fragmento da cifra',            req:s=>(s.cipherFrags||[]).length>=1, icon:'ti-wave-sine' },
   { id:'cipherall',name:'a mensagem decifrada',     desc:'todos os fragmentos revelados',              req:s=>s.cipherDecoded,         icon:'ti-wave-sine' },
   { id:'puzzle5',  name:'cinco peças encaixadas',   desc:'montou 5 peças do mapa',                     req:s=>(s.puzzlePlaced||[]).length>=5,  icon:'ti-puzzle' },
   { id:'puzzledone',name:'o mapa está completo',    desc:'montou o quebra-cabeça inteiro',             req:s=>(s.puzzlePlaced||[]).length>=18, icon:'ti-puzzle' },
-  { id:'truename', name:'o nome emerge',            desc:'o nome verdadeiro foi revelado',             req:s=>s.trueNameRevealed,      icon:'ti-star' },
-  { id:'streak20', name:'fluxo perpétuo',           desc:'20 sessões consecutivas',                    req:s=>s.streak>=20,            icon:'ti-rocket' },
-  { id:'shop1',    name:'o primeiro poder',         desc:'comprou um poder na loja',                   req:s=>s.owned.length>=1,       icon:'ti-wand' },
   { id:'mirror1',  name:'o reflexo começa',         desc:'primeira forma espelho desbloqueada',        req:s=>(s.mirrorCount||0)>=1,   icon:'ti-sparkles' },
   { id:'diary1',   name:'primeira entrada',         desc:'1ª entrada do diário gerada',                req:s=>(s.diary||[]).length>=1, icon:'ti-star' },
   { id:'eternal1', name:'além do fim',              desc:'primeiro título eterno conquistado',         req:s=>!!s.lastEternalTitle,    icon:'ti-rocket' },
-  { id:'streak5',  name:'cinco profundezas',        desc:'5 sessões consecutivas',                     req:s=>s.streak>=5,             icon:'ti-link' },
+  { id:'truename', name:'o nome emerge',            desc:'o nome verdadeiro foi revelado',             req:s=>s.trueNameRevealed,      icon:'ti-star' },
 ];
-
 // ═══════════════════════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════════════════════
@@ -2358,7 +2357,7 @@ function drawNoNome(ctx,cx,cy,t,col){
 let trailPoints=[];
 function drawPowers(ctx,cx,cy,t,col){
   const rgb=hexRgb(col);
-  if(S.owned.includes('trail')){
+  if((S.activePowers||S.owned).includes('trail')){
     trailPoints.push({x:cx+Math.cos(t*.02)*5,y:cy+Math.sin(t*.015)*5,age:0});
     if(trailPoints.length>30) trailPoints.shift();
     trailPoints.forEach((p,i)=>{
@@ -2367,19 +2366,19 @@ function drawPowers(ctx,cx,cy,t,col){
       ctx.fillStyle=`rgba(${rgb.r},${rgb.g},${rgb.b},${.5*(1-p.age/30)})`; ctx.fill();
     });
   }
-  if(S.owned.includes('particles')){
+  if((S.activePowers||S.owned).includes('particles')){
     for(let i=0;i<12;i++){
       const a=(i/12)*Math.PI*2+t*.012, r=55+10*Math.sin(t*.02+i);
       ctx.beginPath(); ctx.arc(cx+Math.cos(a)*r, cy+Math.sin(a)*r, 1.5, 0, Math.PI*2);
       ctx.fillStyle=`rgba(${rgb.r},${rgb.g},${rgb.b},${.4+.3*Math.sin(t*.05+i)})`; ctx.fill();
     }
   }
-  if(S.owned.includes('aura')){
+  if((S.activePowers||S.owned).includes('aura')){
     const ap=.15+.12*Math.sin(t*.04);
     ctx.beginPath(); ctx.arc(cx,cy,52,0,Math.PI*2);
     ctx.strokeStyle=`rgba(${rgb.r},${rgb.g},${rgb.b},${ap})`; ctx.lineWidth=8; ctx.stroke();
   }
-  if(S.owned.includes('nebulabg')){
+  if((S.activePowers||S.owned).includes('nebulabg')){
     for(let i=0;i<4;i++){
       const nx=cx+40*Math.cos((i/4)*Math.PI*2+t*.005), ny=cy+40*Math.sin((i/4)*Math.PI*2+t*.005);
       const gn=ctx.createRadialGradient(nx,ny,0,nx,ny,30);
@@ -2387,14 +2386,14 @@ function drawPowers(ctx,cx,cy,t,col){
       ctx.beginPath(); ctx.arc(nx,ny,30,0,Math.PI*2); ctx.fillStyle=gn; ctx.fill();
     }
   }
-  if(S.owned.includes('crown')){
+  if((S.activePowers||S.owned).includes('crown')){
     for(let i=0;i<8;i++){
       const a=(i/8)*Math.PI*2+t*.015;
       ctx.beginPath(); ctx.arc(cx+Math.cos(a)*38, cy+Math.sin(a)*38-10, 2.5, 0, Math.PI*2);
       ctx.fillStyle=`rgba(255,220,80,${.6+.4*Math.sin(t*.04+i)})`; ctx.fill();
     }
   }
-  if(S.owned.includes('double')){
+  if((S.activePowers||S.owned).includes('double')){
     const cr=getCurrentCreature(), w=getCurrentWorld();
     const ox=cx+50*Math.cos(t*.015), oy=cy+50*Math.sin(t*.012);
     ctx.save(); ctx.globalAlpha=0.35; ctx.translate(ox-cx,oy-cy); ctx.scale(.4,.4);
@@ -2579,20 +2578,45 @@ function updateConquests(){
   if(newUnlock) showBanner('\u2014 '+newUnlock.name+' desbloqueada \u2014');
 }
 function buildShop(){
-  const grid=document.getElementById('shopGrid'); grid.innerHTML='';
+  const grid=document.getElementById('shopGrid');
+  if(!grid) return;
+  grid.innerHTML='';
   SHOP_ITEMS.forEach(item=>{
-    const owned=S.owned.includes(item.id);
-    const el=document.createElement('div'); el.className='shop-item'+(owned?' owned':'');
+    const owned = S.owned.includes(item.id);
+    const active = owned && (S.activePowers||[]).includes(item.id);
+    const el=document.createElement('div');
+    el.className='shop-item'+(owned?' owned':'');
+    if(active) el.style.borderColor='var(--accent)';
+    // buy or toggle button
+    let btnHtml = '';
+    if(!owned){
+      btnHtml = `<button class="shop-btn" onclick="buyItem('${item.id}',${item.price})">comprar</button>`;
+    } else {
+      const label = active ? 'ativo ●' : 'inativo ○';
+      const col = active ? 'var(--accent2)' : 'var(--text3)';
+      btnHtml = `<button class="shop-btn" style="color:${col};border-color:${col};" onclick="togglePower('${item.id}')">${label}</button>`;
+    }
     el.innerHTML=`<div class="shop-item-name">${item.name}</div>
       <div class="shop-item-desc">${item.desc}</div>
       <div class="shop-item-price"><span style="display:inline-flex;vertical-align:middle"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873z"/></svg></span>${item.price} pontos</div>
-      <button class="shop-btn" ${owned?'disabled':''} onclick="buyItem('${item.id}',${item.price})">${owned?'adquirido':'comprar'}</button>`;
+      ${btnHtml}`;
     grid.appendChild(el);
   });
 }
+function togglePower(id){
+  if(!S.activePowers) S.activePowers=[];
+  const idx=S.activePowers.indexOf(id);
+  if(idx>=0) S.activePowers.splice(idx,1);
+  else S.activePowers.push(id);
+  save(); buildShop();
+  showBanner((S.activePowers||[]).includes(id)?'poder ativado ●':'poder desativado ○');
+}
 function buyItem(id,price){
   if(S.coins<price){ showBanner('pontos insuficientes — continue estudando!'); return; }
-  S.coins-=price; S.owned.push(id); save(); buildShop(); updateStats(); updateConquests();
+  S.coins-=price; S.owned.push(id);
+  if(!S.activePowers) S.activePowers=[];
+  S.activePowers.push(id); // auto-ativa ao comprar
+  save(); buildShop(); updateStats(); updateConquests();
   showBanner('poder desbloqueado: '+SHOP_ITEMS.find(i=>i.id===id).name);
 }
 function buildWorldsPanel(){
